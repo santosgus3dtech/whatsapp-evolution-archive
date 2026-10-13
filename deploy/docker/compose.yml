@@ -1,0 +1,191 @@
+name: whatsapp-evolution-public
+
+x-runtime: &runtime
+  init: true
+  restart: unless-stopped
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *runtime
+    platform: linux/amd64
+    image: postgres:17-alpine@sha256:aa90e97ee862e558111d34cfb8b2c4bec768c2b039fb791341686928560263b3
+    # The official entrypoint needs these solely to initialize its own bind mount.
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE, SETGID, SETUID]
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 128
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in the private env file}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in the private env file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the private env file}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    command: [postgres, -c, max_connections=50, -c, shared_buffers=128MB]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [backplane]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    <<: *runtime
+    platform: linux/amd64
+    image: redis:7-alpine@sha256:ca0acbb137c1dc3339c8b147a58fd6f42775d4599327b50e7b116c23de501af2
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 64
+    command: [redis-server, --appendonly, "yes", --maxmemory, 256mb, --maxmemory-policy, noeviction]
+    volumes:
+      - redis-data:/data
+    networks: [backplane]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  evolution:
+    <<: *runtime
+    platform: linux/amd64
+    image: evoapicloud/evolution-api:v2.3.7@sha256:456b4104b0ddffbb092d6b3c0560a4ae86fc3e014e885b882aca4b1b371dfc81
+    mem_limit: 1536m
+    cpus: 1.5
+    pids_limit: 256
+    # Upstream generates Prisma artifacts at startup; do not force read_only.
+    entrypoint: [/bin/bash, /whatsapp-archive-start.sh]
+    environment:
+      NODE_ENV: PROD
+      NODE_OPTIONS: --max-old-space-size=1024
+      SERVER_URL: http://evolution:8080
+      SERVER_TYPE: http
+      SERVER_PORT: "8080"
+      SERVER_DISABLE_DOCS: "true"
+      SERVER_DISABLE_MANAGER: "true"
+      TELEMETRY_ENABLED: "false"
+      LOG_LEVEL: ERROR,WARN
+      LOG_BAILEYS: error
+      LOG_COLOR: "false"
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?Set EVOLUTION_API_KEY in the private env file}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: ${DATABASE_CONNECTION_URI:?Set DATABASE_CONNECTION_URI in the private env file}
+      DATABASE_CONNECTION_CLIENT_NAME: whatsapp_archive
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
+      DATABASE_DELETE_MESSAGE: "true"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/0
+      CACHE_REDIS_PREFIX_KEY: whatsapp_archive
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      S3_ENABLED: "false"
+      RABBITMQ_ENABLED: "false"
+      SQS_ENABLED: "false"
+      KAFKA_ENABLED: "false"
+      PUSHER_ENABLED: "false"
+      WEBSOCKET_ENABLED: "false"
+      TYPEBOT_ENABLED: "false"
+      CHATWOOT_ENABLED: "false"
+      OPENAI_ENABLED: "false"
+      DIFY_ENABLED: "false"
+      N8N_ENABLED: "false"
+      EVOAI_ENABLED: "false"
+      CONFIG_SESSION_PHONE_CLIENT: Whatsapp Evolution Manager
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      LANGUAGE: pt-BR
+    volumes:
+      - evolution-instances:/evolution/instances
+      - ./evolution-entrypoint.sh:/whatsapp-archive-start.sh:ro
+    networks: [backplane, evolution-egress]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/', {signal: AbortSignal.timeout(4000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+
+  archive:
+    <<: *runtime
+    platform: linux/amd64
+    image: local/whatsapp-archive:${ARCHIVE_IMAGE_TAG:-initial}
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        VITE_BASE_URL: ${ARCHIVE_PUBLIC_PATH:-/}
+    user: 10001:10001
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    environment:
+      ARCHIVE_DATA_DIR: /data
+      ARCHIVE_STATIC_DIR: /app/apps/panel/dist
+      ARCHIVE_USERNAME: ${ARCHIVE_USERNAME:?Set ARCHIVE_USERNAME in the private env file}
+      ARCHIVE_PASSWORD: ${ARCHIVE_PASSWORD:?Set ARCHIVE_PASSWORD in the private env file}
+      ARCHIVE_PUBLIC_ORIGIN: ${ARCHIVE_PUBLIC_ORIGIN:-}
+      ARCHIVE_PUBLIC_PATH: ${ARCHIVE_PUBLIC_PATH:-/}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in the private env file}
+      EVOLUTION_API_URL: http://evolution:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:?Set EVOLUTION_API_KEY in the private env file}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-archive-demo}
+      ARCHIVE_INTERNAL_URL: http://archive:8000
+    volumes:
+      - archive-data:/data
+    ports:
+      - ${ARCHIVE_BIND_ADDRESS:-127.0.0.1}:${ARCHIVE_PORT:-8097}:8000
+    # Loopback by default; use an authenticated HTTPS proxy for remote access.
+    networks: [panel-access, backplane]
+    depends_on:
+      evolution: {condition: service_healthy}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=4).read(1024)"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  backplane:
+    internal: true
+  evolution-egress:
+    driver: bridge
+  panel-access:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  evolution-instances:
+  archive-data:
