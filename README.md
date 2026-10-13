@@ -1,43 +1,45 @@
 # Whatsapp Evolution Manager
 
-Arquivo pessoal de mensagens disponibilizadas pela Evolution API, com serviço Python/FastAPI, armazenamento SQLite e painel Vue. O nome acima é técnico; o nome definitivo do produto permanece em definição.
+English · [Português (Brasil)](README.pt-BR.md)
 
-O painel permite consultar conversas, buscar mensagens, acompanhar a importação disponível e organizar o arquivo local. Esta distribuição contém fonte e configuração genérica, sem mensagens, credenciais, sessões, fotos ou dados de uma instalação real.
+A personal archive of messages made available by Evolution API, built with Python/FastAPI, SQLite storage, and a Vue panel. This is the project's technical name; the final product name is still being decided.
 
-## O que está disponível
+The panel lets you browse conversations, search messages, track available history imports, and organize your local archive. This distribution includes source code and generic configuration, without messages, credentials, sessions, photos, or data from a real installation.
 
-- Conversas e mensagens com paginação e busca por texto ou legenda.
-- Busca global por período, conversa, tipo e direção recebida/enviada.
-- Favoritos, etiquetas e conversas arquivadas no painel.
-- Indicador de mensagens recebidas ainda não vistas no arquivo.
-- Captura por webhook e reconciliação periódica com o banco da Evolution API.
-- Importação com checkpoint, retomada e deduplicação.
-- Atualização do painel por eventos SSE persistidos.
-- Fotos de perfil consultadas sob demanda, quando disponíveis, com cache privado limitado.
-- Login por sessão; contas adicionais opcionais com senha armazenada como hash scrypt.
+## Available features
 
-## Limites do arquivo
+- Paginated conversations and messages, with text and caption search.
+- Global search by date range, conversation, message type, and incoming/outgoing direction.
+- Favorites, labels, and conversations archived within the panel.
+- An indicator for received messages that have not yet been viewed in the archive.
+- Webhook capture and periodic reconciliation against messages stored by Evolution API.
+- History imports with checkpoints, resumability, and deduplication.
+- Panel updates through persisted SSE events.
+- Profile photos fetched on demand, when available, with a limited private cache.
+- Session login and optional additional accounts with scrypt password hashes.
 
-A integração **não comprova nem garante todo o histórico anterior do WhatsApp**. A aba Histórico mostra a primeira e a última mensagem disponíveis, o início da captura e o progresso da consulta. Uma consulta concluída à Evolution não comprova que todos os dados do telefone estejam disponíveis.
+## Archive limitations
 
-O serviço preserva textos, legendas e alguns metadados de mensagens. Não salva o conteúdo binário de fotos, vídeos, áudios, documentos ou stickers enviados nas conversas, nem acessa a coleção pessoal de stickers salvos. Fotos de perfil são um cache separado e limitado.
+The integration **does not verify or guarantee the complete earlier WhatsApp history**. The History tab shows the earliest and latest available messages, when capture started, and query progress. Completing an Evolution query does not establish that all data from the phone is available.
 
-Não há envio de mensagens pelo painel. Mensagens enviadas por outros clientes podem aparecer quando a integração as disponibiliza. Marcar como visto, favoritar, etiquetar ou arquivar altera somente o arquivo local. O estado “arquivada no WhatsApp” permanece desconhecido quando a API não o informa.
+The service preserves text, captions, and selected message metadata. It does not store the binary content of photos, videos, audio, documents, or stickers sent in conversations, or access the user's collection of saved stickers. Profile photos use a separate, limited cache.
 
-Todos os usuários autenticados acessam a mesma instância e compartilham mensagens, estado de visto e preferências. Não há isolamento por usuário, papéis de acesso ou separação entre clientes.
+The panel does not send messages. Messages sent by other clients may appear when the integration makes them available. Marking a message as viewed, adding favorites or labels, and archiving conversations affect only the local archive. A conversation's "archived in WhatsApp" state remains unknown when the API does not provide it.
 
-## Instalação com Docker
+All authenticated users access the same instance and share messages, viewed status, and preferences. There is no per-user data isolation, role-based access, or separation between customers.
 
-Use Docker com Compose v2 e suporte a containers Linux `amd64`. O Compose inclui o arquivador, Evolution API 2.3.7, PostgreSQL e Redis; o Dockerfile compila o painel e instala as dependências Python fixadas por hash. Há limites de memória por serviço, além do consumo do build e do próprio Docker.
+## Docker installation
 
-Execute os comandos a partir da raiz do repositório:
+Use Docker with Compose v2 and support for Linux `amd64` containers. Compose includes the archive service, Evolution API 2.3.7, PostgreSQL, and Redis. The Dockerfile builds the panel and installs Python dependencies pinned with hashes. Each service has memory limits; the build process and Docker itself require additional resources.
+
+Run these commands from the repository root:
 
 ```powershell
 git clone https://github.com/santosgus3dtech/whatsapp-evolution-archive.git
 Set-Location whatsapp-evolution-archive
 ```
 
-Crie a configuração privada seguindo [Configuração](docs/CONFIGURATION.md#configuração-inicial). O arquivo `.env.example` contém campos obrigatórios vazios; a aplicação não inicia sem preenchê-los.
+Create your private configuration by following the [initial configuration guide (Portuguese)](docs/CONFIGURATION.md#configuração-inicial). The `.env.example` file has empty required fields; the application will not start until they are filled in.
 
 ```powershell
 docker compose --env-file .env -f deploy/docker/compose.yml config --quiet
@@ -46,17 +48,17 @@ docker compose --env-file .env -f deploy/docker/compose.yml ps
 Invoke-RestMethod http://127.0.0.1:8097/healthz
 ```
 
-Abra [http://127.0.0.1:8097](http://127.0.0.1:8097) e entre com o usuário e a senha de `ARCHIVE_USERNAME` e `ARCHIVE_PASSWORD`. O painel é publicado apenas no endereço local por padrão; bancos e Evolution não têm portas publicadas pelo Compose.
+Open [http://127.0.0.1:8097](http://127.0.0.1:8097) and sign in with the username and password set in `ARCHIVE_USERNAME` and `ARCHIVE_PASSWORD`. By default, the panel is bound to localhost; Compose does not publish ports for the databases or Evolution.
 
-Na aba Conexão, use **Vincular WhatsApp** para a instância escolhida. Para uma instância nova, o serviço configura os eventos e o webhook com segredo no cabeçalho, sem mídia em base64. Se a instância já existir, sua configuração é preservada: o serviço **não troca o webhook nem redefine a instância**. Veja [Operação](docs/OPERATIONS.md#instância-e-captura) antes de reutilizar uma instância.
+The interface is currently in Portuguese. In the Connection tab (**Conexão**), select **Vincular WhatsApp** (Link WhatsApp) for your chosen instance. For a new instance, the service configures events and a webhook with a secret in its header, without base64 media. If the instance already exists, its configuration is preserved: the service **does not replace the webhook or reset the instance**. Read the [operation guide (Portuguese)](docs/OPERATIONS.md#instância-e-captura) before reusing an instance.
 
-Após o vínculo, a captura depende dos eventos entregues pela integração. A reconciliação consulta as mensagens já armazenadas na Evolution e tenta recuperar eventos que não chegaram por webhook. Use a aba Histórico para acompanhar a cobertura e solicitar a importação disponível.
+After linking, capture depends on events delivered by the integration. Reconciliation queries messages already stored by Evolution and tries to recover events that did not arrive through the webhook. Use the History tab (**Histórico**) to monitor coverage and request an import of the available history.
 
-Os dados ficam em volumes Docker nomeados. A configuração publicada não utiliza nem importa dados de outra instalação.
+Data is stored in named Docker volumes. The published configuration does not use or import data from another installation.
 
-## Desenvolvimento e verificações
+## Development and checks
 
-Para trabalhar fora do container, use Python 3.12+ e Node.js compatível com `apps/panel/package.json` (`>=22.12.0`). O container usa Python 3.12; a verificação local também utilizou Python 3.13. Os comandos abaixo usam PowerShell e criam um ambiente local:
+For development outside the container, use Python 3.12+ and a Node.js version compatible with `apps/panel/package.json` (`>=22.12.0`). The container uses Python 3.12; local verification also used Python 3.13. The commands below use PowerShell and create a local environment:
 
 ```powershell
 python -m venv .venv
@@ -69,19 +71,21 @@ npm run build
 Set-Location ../..
 ```
 
-Os testes usam dados sintéticos, clientes simulados e diretórios temporários. Cobrem ingestão, duplicatas, edições/exclusões recebidas, autenticação, CSRF, eventos, retomada de importação, preferências locais e cache de fotos. Eles não pareiam um telefone nem provam compatibilidade de uma instalação real do WhatsApp.
+Tests use synthetic data, simulated clients, and temporary directories. They cover ingestion, duplicates, received edits and deletions, authentication, CSRF, events, import resumption, local preferences, and the profile photo cache. They do not pair a phone or prove compatibility with a real WhatsApp installation.
 
-Para executar a aplicação localmente, configure os endereços acessíveis pelo processo Python, conforme [Desenvolvimento local](docs/CONFIGURATION.md#desenvolvimento-local). O `.env` não é carregado automaticamente pelo código Python.
+To run the application locally, configure addresses reachable by the Python process, as explained in the [local development guide (Portuguese)](docs/CONFIGURATION.md#desenvolvimento-local). The Python code does not load `.env` automatically.
 
-## Documentação
+## Documentation
 
-- [Configuração](docs/CONFIGURATION.md): variáveis, segredos, acesso por HTTPS, execução local e usuários adicionais.
-- [Arquitetura](docs/ARCHITECTURE.md): fluxo de dados, persistência, eventos e contratos principais.
-- [Operação](docs/OPERATIONS.md): verificação de saúde, cobertura, erros e conservação dos dados.
-- [Avisos de terceiros](THIRD_PARTY_NOTICES.md): componentes, versões e textos de licença preservados.
+The detailed guides and third-party notice inventory are currently in Portuguese:
 
-## Licença e atribuição
+- [Configuration](docs/CONFIGURATION.md): environment variables, secrets, HTTPS access, local execution, and additional users.
+- [Architecture](docs/ARCHITECTURE.md): data flow, persistence, events, and core API contracts.
+- [Operations](docs/OPERATIONS.md): health checks, coverage, errors, and data preservation.
+- [Third-party notices](THIRD_PARTY_NOTICES.md): components, versions, and preserved license texts.
 
-Esta aplicação utiliza a **Evolution API 2.3.7** como serviço externo. Consulte o [projeto oficial](https://github.com/evolution-foundation/evolution-api), a [licença exata da versão 2.3.7](https://github.com/evolution-foundation/evolution-api/blob/2.3.7/LICENSE), incluindo suas condições adicionais, e o texto preservado em [licenses/external/evolution-api-2.3.7-LICENSE.txt](licenses/external/evolution-api-2.3.7-LICENSE.txt).
+## License and attribution
 
-A licença de reutilização do código próprio está pendente de escolha pelo titular. A disponibilidade pública não concede, por si só, permissão de redistribuição, modificação ou sublicenciamento. Veja [LICENSE.md](LICENSE.md). As dependências conservam suas próprias licenças e avisos; eles não definem a licença do código próprio.
+This application uses **Evolution API 2.3.7** as an external service. See the [official project](https://github.com/evolution-foundation/evolution-api), the [exact license for version 2.3.7](https://github.com/evolution-foundation/evolution-api/blob/2.3.7/LICENSE), including its additional conditions, and the preserved text in [licenses/external/evolution-api-2.3.7-LICENSE.txt](licenses/external/evolution-api-2.3.7-LICENSE.txt).
+
+A reuse license for the original application source is pending the owner's decision. Public availability does not itself grant permission to redistribute, modify, or sublicense that source. See [LICENSE.md](LICENSE.md). Dependencies retain their own licenses and notices; these do not define the license of the original application source.
