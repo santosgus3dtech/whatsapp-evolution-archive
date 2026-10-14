@@ -90,7 +90,7 @@ def create_app(settings: Settings | None = None, evolution: EvolutionClient | No
             await app.state.evolution.close()
             app.state.db.close()
 
-    app = FastAPI(title="Whatsapp Evolution Manager", docs_url=None, redoc_url=None, openapi_url=None, root_path=settings.normalized_public_path, lifespan=lifespan)
+    app = FastAPI(title="WhatsNexo", docs_url=None, redoc_url=None, openapi_url=None, root_path=settings.normalized_public_path, lifespan=lifespan)
 
     def check_origin(request: Request) -> None:
         origin = request.headers.get("origin")

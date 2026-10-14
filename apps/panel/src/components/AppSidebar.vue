@@ -16,10 +16,10 @@ const navigation = [
 
 <template>
   <button v-if="open" class="sidebar-backdrop" aria-label="Fechar navegação" @click="$emit('close')" />
-  <aside class="sidebar" :class="{ 'sidebar--open': open }" aria-label="Navegação principal">
+  <aside class="sidebar" :class="{ 'sidebar--open': open }" aria-label="WhatsNexo">
     <div class="sidebar__brand"><BrandMark dark /></div>
-    <p class="sidebar__caption">Conversas</p>
-    <nav class="sidebar__navigation">
+    <p class="sidebar__caption">WhatsNexo</p>
+    <nav class="sidebar__navigation" aria-label="Navegação do WhatsNexo">
       <button
         v-for="item in navigation" :key="item.id" class="nav-item"
         :class="{ 'nav-item--active': active === item.id }"

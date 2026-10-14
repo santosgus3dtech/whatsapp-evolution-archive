@@ -37,7 +37,7 @@ function navigate(next) {
   <div v-else class="app-shell">
     <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
     <AppSidebar :active="tab" :unseen="status?.counts?.unseen || 0" :open="menuOpen" @navigate="navigate" @logout="archive.logout" @close="menuOpen = false" />
-    <main id="main-content" class="main-area">
+    <main id="main-content" class="main-area" aria-label="WhatsNexo">
       <header class="page-header">
         <button class="icon-button mobile-menu" aria-label="Abrir navegação" :aria-expanded="menuOpen" @click="menuOpen = !menuOpen"><AppIcon name="menu" /></button>
         <div class="page-header__title"><h1>{{ titles[tab] }}</h1><p>{{ subtitle }}</p></div>

@@ -14,8 +14,8 @@ function submit() {
 </script>
 
 <template>
-  <main class="login-screen">
-    <div class="login-brand"><BrandMark dark /><span>Whatsapp Evolution Manager</span></div>
+  <main class="login-screen" aria-label="WhatsNexo — acesso privado">
+    <div class="login-brand"><BrandMark dark /><span>WhatsNexo</span></div>
     <section class="login-card" aria-labelledby="login-title">
       <div class="login-lock"><AppIcon name="lock" :size="27" /></div>
       <h1 id="login-title">Seu arquivo, em segurança.</h1>

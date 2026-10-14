@@ -1,6 +1,6 @@
 # Avisos de terceiros
 
-Este arquivo documenta componentes externos usados na distribuição técnica de Whatsapp Evolution Manager. A licença do código próprio permanece **pendente de definição pelo titular**. Estes avisos não escolhem uma licença para o projeto nem atribuem a terceiros a autoria do código próprio. Os termos e direitos de cada componente continuam nos respectivos arquivos integrais abaixo.
+Este arquivo documenta componentes externos usados na distribuição de WhatsNexo. A licença do código próprio permanece **pendente de definição pelo titular**. Estes avisos não escolhem uma licença para o projeto nem atribuem a terceiros a autoria do código próprio. Os termos e direitos de cada componente continuam nos respectivos arquivos integrais abaixo.
 
 Inventário conferido em 13/10/2026 a partir de `apps/panel/package-lock.json`, `archive_service/requirements.lock` e dos avisos dos artefatos das mesmas versões. Não se incluem `node_modules`, ambientes Python, binários de dependências, bancos, sessões, mensagens ou mídias privadas neste repositório. A pasta de referência `evolution-manager-main` e o ZIP original estão excluídos.
 

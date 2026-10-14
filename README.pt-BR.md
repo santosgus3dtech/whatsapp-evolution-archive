@@ -1,8 +1,8 @@
-# Whatsapp Evolution Manager
+# WhatsNexo
 
 [English](README.md) · Português (Brasil)
 
-Arquivo pessoal de mensagens disponibilizadas pela Evolution API, com serviço Python/FastAPI, armazenamento SQLite e painel Vue. O nome acima é técnico; o nome definitivo do produto permanece em definição.
+Arquivo pessoal de mensagens disponibilizadas pela Evolution API, com serviço Python/FastAPI, armazenamento SQLite e painel Vue.
 
 O painel permite consultar conversas, buscar mensagens, acompanhar a importação disponível e organizar o arquivo local. Esta distribuição contém fonte e configuração genérica, sem mensagens, credenciais, sessões, fotos ou dados de uma instalação real.
 
